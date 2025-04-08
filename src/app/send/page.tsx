@@ -57,14 +57,14 @@ export default function SendPage() {
   const startConnection = async (roomCode: string) => {
     const peer = new RTCPeerConnection({
       iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun.l.google.com:19302' }, // STUN (for local IP discovery)
         {
-          urls: 'turn:openrelay.metered.ca:80',
+          urls: 'turn:openrelay.metered.ca:80',   // TURN (for relaying over internet)
           username: 'openrelayproject',
           credential: 'openrelayproject',
         },
       ],
-    });    
+    });   
     
     
     peerRef.current = peer;
