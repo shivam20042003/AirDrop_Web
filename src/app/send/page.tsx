@@ -55,7 +55,18 @@ export default function SendPage() {
   
 
   const startConnection = async (roomCode: string) => {
-    const peer = new RTCPeerConnection();
+    const peer = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        {
+          urls: 'turn:relay1.expressturn.com:3478',
+          username: 'expressturn',
+          credential: 'expressturn',
+        },
+      ],
+    });
+    
+    
     peerRef.current = peer;
 
     const channel = peer.createDataChannel('file');
