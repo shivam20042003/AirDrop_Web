@@ -34,8 +34,8 @@ export default function SendPage() {
           await peerRef.current?.addIceCandidate(new RTCIceCandidate(msg.candidate));
         }
       };
-      
-  }, [room]); // ✅ run once
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ✅ run once
 
   const createRoom = () => {
     const roomCode = Math.random().toString(36).substring(2, 8);
