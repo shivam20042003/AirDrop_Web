@@ -27,7 +27,7 @@ export default function ReceivePage() {
   };
 
   useEffect(() => {
-    const ws = new WebSocket('wss://airdropbackend-production.up.railway.app/');
+    const ws = new WebSocket('wss://airdropbackend-production.up.railway.app');
     wsRef.current = ws;
 
     ws.onopen = () => console.log('✅ WebSocket connected (receiver)');
@@ -37,7 +37,12 @@ export default function ReceivePage() {
       console.log('[Receiver] Received signal:', msg);
 
       if (msg.type === 'offer') {
-        const peer = new RTCPeerConnection();
+        const peer = new RTCPeerConnection({
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+          ],
+        });
+        
         peerRef.current = peer;
 
         peer.ondatachannel = (e) => {

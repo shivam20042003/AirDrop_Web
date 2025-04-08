@@ -10,7 +10,7 @@ export default function SendPage() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const ws = new WebSocket('wss://airdropbackend-production.up.railway.app/');
+    const ws = new WebSocket('wss://airdropbackend-production.up.railway.app');
     wsRef.current = ws;
 
     ws.onopen = () => {
