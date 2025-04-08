@@ -41,12 +41,12 @@ export default function ReceivePage() {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             {
-              urls: 'turn:relay1.expressturn.com:3478',
-              username: 'expressturn',
-              credential: 'expressturn',
+              urls: 'turn:openrelay.metered.ca:80',
+              username: 'openrelayproject',
+              credential: 'openrelayproject',
             },
           ],
-        });
+        });        
         
         
         peerRef.current = peer;
