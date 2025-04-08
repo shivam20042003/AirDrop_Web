@@ -46,7 +46,7 @@ export default function SendPage() {
         wsRef.current.send(JSON.stringify({ type: 'join', room: roomCode }));
         startConnection(roomCode);
       } else {
-        setTimeout(waitForWebSocket, 10000); // Check again after 100ms
+        setTimeout(waitForWebSocket, 100); // Check again after 100ms
       }
     };
   
