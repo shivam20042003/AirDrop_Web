@@ -1,65 +1,12 @@
-'use client'
-import { useEffect, useState } from "react";
-
-function Home() {
-
-  const [roomEnt,setRoomEnt] = useState(false);
-  const [socket,setSocket] = useState<WebSocket>();
-  const [input,setInput] = useState<string>();
-  const [messages,setMessages] = useState<string[]>([]);
-  type cp = {
-      type: "join",
-      payload: {roomId:string} 
-  }|{
-      type: "chat",
-      payload: {message:string}
-  }
-  const joiningRoom1 = () =>{
-    const sendMessP:cp = {
-      type:"join",
-      payload:{roomId:"hollaMan123"}
-    }
-    socket?.send(JSON.stringify(sendMessP));
-    setRoomEnt(true);
-  }
-  const joiningRoom2 = () =>{
-    const sendMessP:cp = {
-      type:"join",
-      payload:{roomId:"ManRoom@@@@123"}
-    }
-    socket?.send(JSON.stringify(sendMessP));
-    setRoomEnt(true);
-  }
-  const sendMess = () =>{
-    const sendMessP:cp = {
-      type:"chat",
-      payload:{message:input?input:"no mess"}
-    }
-    socket?.send(JSON.stringify(sendMessP));
-  }
-  useEffect(()=>{
-    const newSocket = new WebSocket('ws://localhost:8080');
-    newSocket.onmessage = (message) => {
-      setMessages(m=>[...m,message.data]);
-      console.log('Message received:', message.data, message.source);
-    }
-    setSocket(newSocket);
-  },[])
-
+export default function Home() {
   return (
-    <div className=" flex flex-col items-center justify-center">
-      {!roomEnt?(<div><button onClick={joiningRoom1}>Join Chat room 1</button><button onClick={joiningRoom2}>Join Chat room 2</button></div>):(
-        <div>
-          {messages.map((y,index)=>{
-            return(
-              <p key={index}> {y} <br /></p>
-            )
-          })}
-        <input onChange={(e)=>setInput(e.target.value)} type="text" placeholder="message....." /><button onClick={sendMess}>Send</button>
-        </div>
-      )}
-    </div>
-  )
+    <main className="flex flex-col items-center justify-center h-screen text-center gap-6">
+      <h1 className="text-4xl font-bold">AirDrop for Web 📂⚡</h1>
+      <p className="text-lg">No sign-up. No cloud. Just drop a file and share a link.</p>
+      <div className="flex gap-4">
+        <a href="/send" className="px-4 py-2 bg-blue-600 text-white rounded-xl">Send File</a>
+        <a href="/receive" className="px-4 py-2 bg-green-600 text-white rounded-xl">Receive File</a>
+      </div>
+    </main>
+  );
 }
-
-export default Home
