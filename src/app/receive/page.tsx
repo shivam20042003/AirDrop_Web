@@ -150,7 +150,7 @@ export default function ReceivePage() {
       )}
 
       {recvProgress === 100 && (
-        <p className="mt-4 text-green-600 font-semibold">✅ File Received</p>
+        <p className="mt-4 text-green-600 font-semibold">✅ File Received{receivedChunks}</p>
 )}
 
 
