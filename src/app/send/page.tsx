@@ -8,6 +8,8 @@ export default function SendPage() {
   const roomRef = useRef('');
   const [room, setRoom] = useState('');
   const [connected, setConnected] = useState(false);
+  const [progress, setProgress] = useState(0);
+
 
   useEffect(() => {
     const ws = new WebSocket('wss://airdropbackend-production.up.railway.app');
@@ -105,7 +107,16 @@ export default function SendPage() {
   
     if (!file || !dataChannel || dataChannel.readyState !== 'open') return;
   
-    console.log('📤 Sending file metadata');
+    const CHUNK_SIZE = 64 * 1024; // 64KB
+    const MAX_BUFFER = 16 * 1024 * 1024; // 16MB
+    const LOW_WATER_MARK = 8 * 1024 * 1024; // 8MB
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let sentChunks = 0;
+
+  
+    dataChannel.bufferedAmountLowThreshold = LOW_WATER_MARK;
+  
+    // Send file metadata
     dataChannel.send(JSON.stringify({
       type: 'file-meta',
       name: file.name,
@@ -113,27 +124,49 @@ export default function SendPage() {
       fileType: file.type,
     }));
   
-    const CHUNK_SIZE = 64 * 1024; // 64 KB
-    const MAX_BUFFER = 16 * 1024 * 1024; // 16 MB
     let offset = 0;
   
-    while (offset < file.size) {
-      // Wait if buffer is full
-      while (dataChannel.bufferedAmount > MAX_BUFFER) {
-        await new Promise(res => setTimeout(res, 20));
-      }
+    const waitForDrain = () =>
+      new Promise<void>((resolve) => {
+        if (dataChannel.bufferedAmount < LOW_WATER_MARK) {
+          resolve();
+        } else {
+          const handler = () => {
+            dataChannel.removeEventListener('bufferedamountlow', handler);
+            resolve();
+          };
+          dataChannel.addEventListener('bufferedamountlow', handler);
+        }
+      });
   
+    while (offset < file.size) {
       const slice = file.slice(offset, offset + CHUNK_SIZE);
       const buffer = await slice.arrayBuffer();
-      dataChannel.send(new Uint8Array(buffer));
-      offset += CHUNK_SIZE;
   
+      // Wait for buffer drain if needed
+      if (dataChannel.bufferedAmount > MAX_BUFFER) {
+        await waitForDrain();
+      }
+  
+      try {
+        dataChannel.send(new Uint32Array(buffer));
+      } catch (err) {
+        console.error('🚫 Send failed:', err);
+        break;
+      }
+  
+      offset += CHUNK_SIZE;
+      sentChunks++;
+      const progressPercent = Math.floor((sentChunks / totalChunks) * 100);
+      setProgress(progressPercent);
+      console.log(`📦 Sent ${progressPercent}%`);
       console.log(`📦 Sent ${((offset / file.size) * 100).toFixed(2)}%`);
     }
   
-    console.log('✅ File send complete');
     dataChannel.send(JSON.stringify({ type: 'eof' }));
+    console.log('✅ File send complete');
   };
+  
   
 
   return (
@@ -142,8 +175,19 @@ export default function SendPage() {
       {room ? <p className="mb-2">Room Code: <code>{room}</code></p> : (
         <button onClick={createRoom} className="px-4 py-2 bg-blue-500 text-white rounded-xl">Create Room</button>
       )}
-      {connected ? (
+      {connected ? (<>
         <input type="file" onChange={handleFile} className="block mx-auto mt-6" />
+        {progress > 0 && progress < 100 && (
+          <div className="w-full bg-gray-200 rounded-full h-4 mt-4">
+            <div
+              className="bg-blue-500 h-4 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+        {progress === 100 && <p className="mt-2 text-green-600">✅ File Sent</p>}
+        </>
+        
       ) : (
         <p className="text-sm text-gray-500 mt-6">Waiting for connection...</p>
       )}

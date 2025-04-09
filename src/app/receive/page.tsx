@@ -8,6 +8,10 @@ export default function ReceivePage() {
   const [room, setRoom] = useState('');
   const [inputRoom, setInputRoom] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
+  const [recvProgress, setRecvProgress] = useState(0);
+  const [expectedChunks, setExpectedChunks] = useState(0);
+  const [receivedChunks, setReceivedChunks] = useState(0);
+
 
   interface FileMeta {
     type: 'file-meta';
@@ -54,7 +58,7 @@ export default function ReceivePage() {
         peer.ondatachannel = (e) => {
           const channel = e.channel;
           console.log('[Receiver] DataChannel received');
-          const receivedChunks: Uint8Array[] = [];
+          const receivedChunks: Uint32Array[] = [];
           let fileMeta: FileMeta ;
 
           channel.onmessage = (event) => {
@@ -63,7 +67,9 @@ export default function ReceivePage() {
               if (data.type === 'file-meta') {
                 fileMeta = data;
                 setMessages((m) => [...m, `Receiving: ${fileMeta.name}`]);
-              } else if (data.type === 'eof') {
+                setExpectedChunks(Math.ceil(data.size / (64 * 1024))); // 64KB chunks
+              }
+              else if (data.type === 'eof') {
                 const blob = new Blob(receivedChunks, { type: fileMeta.fileType });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
@@ -72,8 +78,13 @@ export default function ReceivePage() {
                 setMessages((m) => [...m, `✅ File saved`]);
               }
             } else {
-              receivedChunks.push(new Uint8Array(event.data));
+              receivedChunks.push(new Uint32Array(event.data));
               console.log(`[Receiver] Chunk received (${event.data.byteLength} bytes)`);
+              setReceivedChunks(prev => {
+                const updated = prev + 1;
+                setRecvProgress(Math.floor((updated / expectedChunks) * 100));
+                return updated;
+              });
             }
           };
 
@@ -126,6 +137,23 @@ export default function ReceivePage() {
           <li key={i}>📥 {msg}</li>
         ))}
       </ul>
+      {expectedChunks > 0 && recvProgress < 100 && (
+        <div className="w-full bg-gray-200 rounded-full h-4 mt-4 relative max-w-md mx-auto">
+          <div
+            className="bg-green-500 h-4 rounded-full transition-all duration-300"
+            style={{ width: `${recvProgress}%` }}
+          />
+          <p className="absolute inset-0 flex items-center justify-center text-xs font-medium text-black">
+            {recvProgress}%
+          </p>
+        </div>
+      )}
+
+      {recvProgress === 100 && (
+        <p className="mt-4 text-green-600 font-semibold">✅ File Received</p>
+)}
+
+
     </div>
   );
 }
